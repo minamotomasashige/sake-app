@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ak 日本酒ログ 究極完全版 Final</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<style>
+    :root {
+        --primary: #2c3e50;
+        --accent: #c9a66b;
+        --bg: #f5f5f7;
+        --card-bg: #ffffff;
+        --text: #333;
+        --wood-color: #8b5a2b; /* 木の色 */
+        --wood-dark: #5e3b1f;
+    }
+    body {
+        font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 40px;
+    }
+
+    /* ホーム画面 */
+    #homePage {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    h1 {
+        text-align: center;
+        color: var(--primary);
+        font-size: 28px;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+    }
+
+    .menu-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .menu-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px 10px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        cursor: pointer;
+        border: 1px solid rgba(0,0,0,0.05);
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .menu-title {
+        font-size: 15px;
+        font-weight: bold;
+        color: var(--primary);
+        margin-bottom: 8px;
+        font-family: sans-serif;
+    }
+    .menu-icon { font-size: 32px; }
+
+    /* AK棚ボタン（木目調デザイン） */
+    .ak-shelf-btn {
+        width: 100%;
+        padding: 25px;
+        border-radius: 8px;
+        text-align: center;
+        margin-top: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+        box-sizing: border-box;
+        
+        /* 木目の再現 */
+        background-color: var(--wood-color);
+        background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 4px),
+                          linear-gradient(to bottom, var(--wood-color), var(--wood-dark));
+        color: #fff;
+        border: 2px solid #3e2714;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        position: relative;
+    }
+    /* 釘のような装飾 */
+    .ak-shelf-btn::before, .ak-shelf-btn::after {
+        content: ''; position: absolute; top: 50%; width: 8px; height: 8px;
+        background: #333; border-radius: 50%; box-shadow: 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .ak-shelf-btn::before { left: 15px; transform: translateY(-50%); }
+    .ak-shelf-btn::after { right: 15px; transform: translateY(-50%); }
+
+    .ak-shelf-text {
+        font-size: 20px; font-weight: bold; letter-spacing: 1px; font-family: serif;
+    }
+
+    /* 共通UI */
+    .page { display: none; min-height: 100vh; background: var(--bg); padding-bottom: 80px; }
+    .page.active { display: block; }
+    
+    .header {
+        background: var(--primary); color: white; padding: 15px 20px;
+        position: sticky; top: 0; z-index: 100; display: flex; align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .back-btn {
+        cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;
+        background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px;
+    }
+
+    /* 入力フォーム */
+    .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+    .form-section {
+        background: white; padding: 20px; border-radius: 12px;
+        margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    .form-label {
+        font-weight: bold; color: var(--primary); margin-bottom: 8px; display: block;
+        border-left: 4px solid var(--accent); padding-left: 10px; font-size: 14px;
+    }
+
+    input[type="text"], input[type="number"], textarea, select {
+        width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;
+        font-size: 16px; box-sizing: border-box; margin-bottom: 12px; background: #fff;
+    }
+    
+    /* AK棚番号入力 */
+    .shelf-input-group {
+        display: flex; align-items: center; background: #fdf5e6;
+        padding: 15px; border-radius: 8px; border: 1px solid #e0d0b0;
+    }
+
+    /* タグボタン */
+    .tag-container { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag-chip {
+        border: 1px solid #ccc; background: #fff; color: #555;
+        padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    }
+    .tag-chip.selected {
+        background: var(--primary); color: #fff; border-color: var(--primary);
+    }
+
+    /* 画像アップロード */
+    .img-upload {
+        background: #eee; height: 180px; border-radius: 10px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #888; border: 2px dashed #bbb; cursor: pointer; position: relative; overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .img-upload img {
+        width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0;
+    }
+
+    /* 甘辛度スライダー */
+    .range-wrap { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    input[type=range] { flex: 1; accent-color: var(--primary); }
+    .degree-val { text-align: center; font-size: 22px; font-weight: bold; color: var(--accent); }
+
+    /* パラメータ */
+    .param-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; }
+    .param-item label { font-size: 11px; display: block; margin-bottom: 2px; }
+    .param-item input { margin-bottom: 0; text-align: center; }
+
+    .save-btn {
+        background: var(--primary); color: white; width: 100%; padding: 15px;
+        border: none; border-radius: 30px; font-size: 18px; font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-top: 10px;
+    }
+
+    /* リスト表示 */
+    .list-item {
+        background: white; border-radius: 10px; padding: 12px; margin-bottom: 12px;
+        display: flex; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; position: relative;
+    }
+    .list-thumb {
+        width: 70px; height: 70px; background: #eee; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+    }
+    .list-info h3 { margin: 0 0 4px 0; font-size: 16px; color: var(--primary); }
+    .list-info p { margin: 0; font-size: 12px; color: #666; line-height: 1.4; }
+    .shelf-badge {
+        position: absolute; top: 10px; right: 10px;
+        background: var(--wood-color); color: #fff; padding: 2px 8px;
+        border-radius: 4px; font-size: 11px; font-weight: bold;
+    }
+
+    /* 詳細モーダル */
+    .modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: white; z-index: 200; overflow-y: auto; display: none;
+    }
+    .modal.active { display: block; }
+    .modal-img { width: 100%; height: 350px; background: #222; object-fit: contain; }
+    .modal-body {
+        padding: 25px; background: white; border-radius: 25px 25px 0 0; margin-top: -20px; position: relative;
+    }
+    .close-modal {
+        position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.6);
+        color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; z-index: 201;
+    }
+
+    /* データ操作系 */
+    .data-tools { text-align: center; margin-top: 40px; }
+    .tool-link { font-size: 12px; color: #999; text-decoration: underline; margin: 0 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="homePage">
+    <h1>ak 日本酒ログ</h1>
+    
+    <div class="menu-grid">
+        <div class="menu-card" onclick="openAddPage()">
+            <div class="menu-title">日本酒を追加</div>
+            <div class="menu-icon">🍶＋</div>
+        </div>
+        <div class="menu-card" onclick="openBreweryList()">
+            <div class="menu-title">訪れた蔵リスト</div>
+            <div class="menu-icon">🏠</div>
+        </div>
+        <div class="menu-card" onclick="openList('all')">
+            <div class="menu-title">検索・並び替え</div>
+            <div class="menu-icon">🔍</div>
+        </div>
+        <div class="menu-card" onclick="openList('all')">
+            <div class="menu-title">飲んだリスト</div>
+            <div class="menu-icon">📋</div>
+        </div>
+    </div>
+
+    <div class="ak-shelf-btn" onclick="openList('shelf')">
+        <div class="ak-shelf-text">AK日本酒棚 (No.順)</div>
+        <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">1-30, 51-100</div>
+    </div>
+
+    <div class="data-tools">
+        <span class="tool-link" onclick="backupData()">バックアップ</span>
+        <span class="tool-link" onclick="restoreData()">復元</span>
+    </div>
+</div>
+
+<div id="editPage" class="page">
+    <div class="header">
+        <div class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> ホーム</div>
+        <span style="margin-left:auto; font-weight:bold;">記録</span>
+    </div>
+    <div class="container">
+        
+        <div class="img-upload" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-camera" style="font-size:28px; margin-bottom:8px;"></i>
+            <span id="uploadMsg">写真をタップして追加</span>
+            <img id="previewImg" style="display:none;">
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImage(event)">
+
+        <div class="form-section">
+            <div class="form-label">基本情報</div>
+            <input type="text" id="inputName" placeholder="銘柄名（例：心星）">
+            <input type="text" id="inputBrewery" placeholder="蔵元（例：菊の司酒造）">
+            <input type="text" id="inputPref" placeholder="都道府県（例：岩手県）">
+
+            <div class="form-label" style="margin-top:15px;">特定名称（ランク）</div>
+            <select id="inputCategory">
+                <option value="">選択してください</option>
+                <option value="純米大吟醸">純米大吟醸</option>
+                <option value="純米吟醸">純米吟醸</option>
+                <option value="純米">純米</option>
+                <option value="特別純米">特別純米</option>
+                <option value="大吟醸">大吟醸</option>
+                <option value="吟醸">吟醸</option>
+                <option value="本醸造">本醸造</option>
+                <option value="特別本醸造">特別本醸造</option>
+                <option value="普通酒">普通酒</option>
+                <option value="その他">その他</option>
+            </select>
+        </div>
+
+        <div class="form-section shelf-input-group">
+            <div style="flex-grow:1;">
+                <label style="font-weight:bold; color:#8b5a2b;">AK日本酒棚 番号</label>
+                <div style="font-size:11px; color:#666;">※棚に入れない場合は空欄</div>
+            </div>
+            <input type="number" id="inputShelfNo" placeholder="No." style="width:80px; margin:0; text-align:center;">
+        </div>
+
+        <div class="form-section">
+            <div class="form-label">特徴タグ（複数選択可）</div>
+            <div class="tag-container" id="tagButtons">
+                </div>
+            <input type="text" id="inputCustomTag" placeholder="その他（自由入力）" style="margin-top:10px;">
+        </div>
+
+        <div class="form-section">
+            <div class="form-label">甘辛度 (左:甘 / 右:辛)</div>
+            <div class="degree-val" id="degreeDisp">0</div>
+            <div class="range-wrap">
+                <span style="font-size:12px; font-weight:bold; color:#e67e22;">甘 (-5)</span>
+                <input type="range" id="inputDegree" min="-5" max="5" step="1" value="0" oninput="updateDegree(this.value)">
+                <span style="font-size:12px; font-weight:bold; color:#2980b9;">辛 (+5)</span>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-label">味わいチャート</div>
+            <div class="param-grid">
+                <div class="param-item"><label>香り</label><input type="number" id="p_kaori" min="1" max="6" value="3"></div>
+                <div class="param-item"><label>キレ</label><input type="number" id="p_kire" min="1" max="6" value="3"></div>
+                <div class="param-item"><label>コク</label><input type="number" id="p_koku" min="1" max="6" value="3"></div>
+                <div class="param-item"><label>酸味</label><input type="number" id="p_sanmi" min="1" max="6" value="3"></div>
+                <div class="param-item"><label>炭酸</label><input type="number" id="p_tansan" min="1" max="6" value="3"></div>
+                <div class="param-item"><label>甘味</label><input type="number" id="p_amami" min="1" max="6" value="3"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-label">メモ</div>
+            <textarea id="inputMemo" rows="4"></textarea>
+        </div>
+
+        <button class="save-btn" onclick="saveData()">保存する</button>
+    </div>
+</div>
+
+<div id="listPage" class="page">
+    <div class="header">
+        <div class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i> ホーム</div>
+        <span style="margin-left:auto; font-weight:bold;" id="listTitle">リスト</span>
+    </div>
+    <div style="padding:10px 20px;">
+        <input type="text" id="searchBox" placeholder="検索..." oninput="renderList()" style="margin:0;">
+    </div>
+    <div style="padding:10px;" id="listContainer"></div>
+</div>
+
+<div id="detailModal" class="modal">
+    <div class="close-modal" onclick="closeDetail()"><i class="fas fa-times"></i> 閉じる</div>
+    <img id="detailImg" class="modal-img">
+    <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:start;">
+            <h2 id="detailName" style="margin:0 0 5px 0; color:var(--primary); font-family:serif;"></h2>
+            <div id="detailShelfBadge" style="background:#8b5a2b; color:white; padding:4px 8px; border-radius:4px; font-size:12px; display:none;"></div>
+        </div>
+        <p id="detailSub" style="color:#666; margin-bottom:10px;"></p>
+        
+        <div style="margin-bottom:15px; display:flex; gap:5px; flex-wrap:wrap;" id="detailTags"></div>
+        
+        <div style="margin-bottom:20px;">
+            <strong>甘辛度:</strong> <span id="detailDegreeVal" style="font-weight:bold; font-size:18px;"></span>
+        </div>
+
+        <div style="height:250px; position:relative; margin-bottom:20px;">
+            <canvas id="detailChart"></canvas>
+        </div>
+
+        <div style="background:#f9f9f9; padding:15px; border-radius:10px;">
+            <p id="detailMemo" style="white-space:pre-wrap; margin:0;"></p>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:30px;">
+            <button onclick="editCurrent()" style="flex:1; padding:12px; border:none; background:#eee; border-radius:8px;">編集</button>
+            <button onclick="deleteCurrent()" style="flex:1; padding:12px; border:none; background:#ffebeb; color:#e74c3c; border-radius:8px;">削除</button>
+        </div>
+        <div style="height:50px;"></div>
+    </div>
+</div>
+
+<script>
+    // === データ管理 ===
+    let sakeData = [];
+    // タグの種類を最大限豊富に
+    const FEATURE_TAGS = [
+        "生酒", "火入れ", "無濾過", "原酒", "直汲み", "中取り", "責め", "あらばしり",
+        "おりがらみ", "にごり", "発泡・スパークリング",
+        "山廃", "生酛", "菩提酛", "水酛",
+        "ひやおろし", "秋あがり", "しぼりたて", "新酒", "古酒", "熟成酒",
+        "フルーティ", "華やか", "穏やか", "芳醇", "淡麗", "旨口", "すっきり", "重め", "軽め", "酸味強め"
+    ];
+    let currentEditId = null;
+    let currentImgBase64 = null;
+    let chartObj = null;
+    let currentFilter = 'all'; 
+
+    window.onload = function() {
+        const saved = localStorage.getItem('akSakeLogFinalV4'); // キーを変更してクリーンに
+        if(saved) sakeData = JSON.parse(saved);
+        
+        // タグボタン生成
+        const tagBox = document.getElementById('tagButtons');
+        FEATURE_TAGS.forEach(t => {
+            const btn = document.createElement('div');
+            btn.className = 'tag-chip';
+            btn.textContent = t;
+            btn.onclick = () => btn.classList.toggle('selected');
+            tagBox.appendChild(btn);
+        });
+    };
+
+    function saveToLS() {
+        localStorage.setItem('akSakeLogFinalV4', JSON.stringify(sakeData));
+    }
+
+    // === 画面操作 ===
+    function goHome() {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('homePage').style.display = 'flex';
+    }
+    function openPage(id) {
+        document.getElementById('homePage').style.display = 'none';
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // === 追加・編集 ===
+    function openAddPage() {
+        resetForm();
+        currentEditId = null;
+        openPage('editPage');
+    }
+
+    function resetForm() {
+        document.getElementById('inputName').value = '';
+        document.getElementById('inputBrewery').value = '';
+        document.getElementById('inputPref').value = '';
+        document.getElementById('inputCategory').value = ''; // プルダウンリセット
+        document.getElementById('inputShelfNo').value = ''; // 棚番号リセット
+        document.getElementById('inputCustomTag').value = '';
+        document.getElementById('inputMemo').value = '';
+        document.getElementById('inputDegree').value = 0;
+        document.getElementById('degreeDisp').textContent = "0";
+        
+        ['kaori','kire','koku','sanmi','tansan','amami'].forEach(k => document.getElementById('p_'+k).value = 3);
+        
+        document.querySelectorAll('.tag-chip').forEach(b => b.classList.remove('selected'));
+        
+        currentImgBase64 = null;
+        document.getElementById('previewImg').style.display = 'none';
+        document.getElementById('uploadMsg').style.display = 'block';
+    }
+
+    // 画像圧縮
+    function handleImage(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                const maxSize = 800;
+                if(w > h && w > maxSize) { h *= maxSize/w; w = maxSize; }
+                else if(h > maxSize) { w *= maxSize/h; h = maxSize; }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                currentImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('previewImg').src = currentImgBase64;
+                document.getElementById('previewImg').style.display = 'block';
+                document.getElementById('uploadMsg').style.display = 'none';
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+
+    function updateDegree(val) {
+        const n = parseInt(val);
+        document.getElementById('degreeDisp').textContent = n === 0 ? "0" : (n > 0 ? "+"+n : n);
+    }
+
+    function saveData() {
+        const name = document.getElementById('inputName').value;
+        if(!name) { alert('銘柄名は必須です'); return; }
+
+        const tags = Array.from(document.querySelectorAll('.tag-chip.selected')).map(b => b.textContent);
+        if(document.getElementById('inputCustomTag').value) tags.push(document.getElementById('inputCustomTag').value);
+        
+        // 棚番号は数値として保存（空ならnull）
+        const shelfVal = document.getElementById('inputShelfNo').value;
+        const shelfNo = shelfVal ? parseInt(shelfVal) : null;
+
+        const newData = {
+            id: currentEditId || Date.now(),
+            name: name,
+            brewery: document.getElementById('inputBrewery').value,
+            pref: document.getElementById('inputPref').value,
+            category: document.getElementById('inputCategory').value, // 特定名称
+            shelfNo: shelfNo, // 棚番号
+            tags: tags,
+            degree: parseInt(document.getElementById('inputDegree').value),
+            params: {
+                kaori: document.getElementById('p_kaori').value,
+                kire: document.getElementById('p_kire').value,
+                koku: document.getElementById('p_koku').value,
+                sanmi: document.getElementById('p_sanmi').value,
+                tansan: document.getElementById('p_tansan').value,
+                amami: document.getElementById('p_amami').value
+            },
+            memo: document.getElementById('inputMemo').value,
+            img: currentImgBase64,
+            date: new Date().toISOString()
+        };
+
+        if(currentEditId) {
+            const idx = sakeData.findIndex(d => d.id === currentEditId);
+            if(idx !== -1) sakeData[idx] = newData;
+        } else {
+            sakeData.unshift(newData);
+        }
+        
+        saveToLS();
+        alert('保存しました');
+        goHome();
+    }
+
+    // === リスト・検索 ===
+    function openList(mode) {
+        currentFilter = mode;
+        const t = document.getElementById('listTitle');
+        document.getElementById('searchBox').value = '';
+        document.getElementById('searchBox').style.display = 'block';
+
+        if(mode === 'shelf') {
+            t.textContent = "AK日本酒棚";
+            document.getElementById('searchBox').placeholder = "棚の中で検索...";
+        } else {
+            t.textContent = "全リスト";
+            document.getElementById('searchBox').placeholder = "名前や場所で検索...";
+        }
+        renderList();
+        openPage('listPage');
+    }
+    
+    function openBreweryList() {
+        document.getElementById('listTitle').textContent = "訪れた蔵";
+        document.getElementById('searchBox').style.display = 'none';
+        
+        const breweries = [...new Set(sakeData.map(d => d.brewery).filter(b => b))].sort();
+        const container = document.getElementById('listContainer');
+        container.innerHTML = '';
+        
+        breweries.forEach(b => {
+            const count = sakeData.filter(d => d.brewery === b).length;
+            const div = document.createElement('div');
+            div.style.background = 'white';
+            div.style.padding = '15px';
+            div.style.borderBottom = '1px solid #eee';
+            div.innerHTML = `<strong>${b}</strong> <span style="color:#888; font-size:12px;">(${count}種)</span>`;
+            div.onclick = () => {
+                document.getElementById('searchBox').value = b;
+                document.getElementById('searchBox').style.display = 'block';
+                currentFilter = 'all';
+                renderList();
+                openPage('listPage');
+            };
+            container.appendChild(div);
+        });
+        openPage('listPage');
+    }
+
+    function renderList() {
+        const term = document.getElementById('searchBox').value.toLowerCase();
+        const container = document.getElementById('listContainer');
+        container.innerHTML = '';
+
+        let list = [...sakeData];
+        
+        // AK棚モードなら番号があるものだけにし、番号順にソート
+        if(currentFilter === 'shelf') {
+            list = list.filter(d => d.shelfNo !== null && d.shelfNo !== "" && !isNaN(d.shelfNo));
+            list.sort((a, b) => a.shelfNo - b.shelfNo);
+        }
+
+        list.filter(d => {
+            return (d.name && d.name.toLowerCase().includes(term)) || 
+                   (d.brewery && d.brewery.toLowerCase().includes(term)) ||
+                   (d.pref && d.pref.toLowerCase().includes(term));
+        }).forEach(d => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.onclick = () => showDetail(d.id);
+            
+            const thumb = d.img ? d.img : 'https://via.placeholder.com/80?text=Sake';
+            const deg = d.degree > 0 ? `+${d.degree}` : d.degree;
+            // 特定名称があれば表示
+            const cat = d.category ? `[${d.category}]` : '';
+            
+            let shelfBadge = '';
+            if(d.shelfNo) shelfBadge = `<div class="shelf-badge">No.${d.shelfNo}</div>`;
+            
+            div.innerHTML = `
+                <img src="${thumb}" class="list-thumb">
+                <div class="list-info">
+                    <h3>${d.name} ${cat}</h3>
+                    <p>${d.pref} / ${d.brewery}</p>
+                    <p>甘辛:${deg} ${d.tags.slice(0,2).join(' ')}</p>
+                </div>
+                ${shelfBadge}
+            `;
+            container.appendChild(div);
+        });
+        
+        if(container.innerHTML === '') container.innerHTML = '<div style="text-align:center;color:#999;margin-top:20px;">該当なし</div>';
+    }
+
+    // === 詳細・編集 ===
+    function showDetail(id) {
+        const d = sakeData.find(i => i.id === id);
+        if(!d) return;
+        currentEditId = id;
+
+        document.getElementById('detailName').textContent = d.name;
+        document.getElementById('detailSub').textContent = `${d.pref} / ${d.brewery} ${d.category ? ' / '+d.category : ''}`;
+        document.getElementById('detailImg').src = d.img || "";
+        document.getElementById('detailImg').style.display = d.img ? 'block' : 'none';
+        
+        // 棚番号バッジ
+        const sBadge = document.getElementById('detailShelfBadge');
+        if(d.shelfNo) {
+            sBadge.textContent = `AK棚 No.${d.shelfNo}`;
+            sBadge.style.display = 'block';
+        } else {
+            sBadge.style.display = 'none';
+        }
+
+        // タグ
+        const tagArea = document.getElementById('detailTags');
+        tagArea.innerHTML = d.tags.map(t => `<span style="background:#eee; padding:4px 10px; border-radius:12px; font-size:11px;">${t}</span>`).join('');
+        
+        // 甘辛度 (マイナス＝甘口)
+        const degStr = d.degree > 0 ? `+${d.degree} (辛口)` : (d.degree < 0 ? `${d.degree} (甘口)` : "0");
+        document.getElementById('detailDegreeVal').textContent = degStr;
+        
+        document.getElementById('detailMemo').textContent = d.memo;
+        document.getElementById('detailModal').classList.add('active');
+
+        // チャート
+        if(chartObj) chartObj.destroy();
+        const ctx = document.getElementById('detailChart').getContext('2d');
+        chartObj = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['甘味', '香り', 'キレ', 'コク', '酸味', '炭酸'],
+                datasets: [{
+                    label: '味わい',
+                    data: [d.params.amami, d.params.kaori, d.params.kire, d.params.koku, d.params.sanmi, d.params.tansan],
+                    backgroundColor: 'rgba(201, 166, 107, 0.4)',
+                    borderColor: '#c9a66b',
+                    pointBackgroundColor: '#c9a66b'
+                }]
+            },
+            options: {
+                scales: { r: { min: 0, max: 6, ticks: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    function closeDetail() { document.getElementById('detailModal').classList.remove('active'); }
+
+    function editCurrent() {
+        const d = sakeData.find(i => i.id === currentEditId);
+        if(!d) return;
+        openAddPage();
+        currentEditId = d.id;
+        
+        document.getElementById('inputName').value = d.name;
+        document.getElementById('inputBrewery').value = d.brewery;
+        document.getElementById('inputPref').value = d.pref;
+        document.getElementById('inputCategory').value = d.category || "";
+        document.getElementById('inputShelfNo').value = d.shelfNo || "";
+        document.getElementById('inputMemo').value = d.memo;
+        document.getElementById('inputDegree').value = d.degree;
+        updateDegree(d.degree);
+        
+        // タグ復元
+        document.querySelectorAll('.tag-chip').forEach(btn => {
+            if(d.tags.includes(btn.textContent)) btn.classList.add('selected');
+        });
+        const custom = d.tags.filter(t => !FEATURE_TAGS.includes(t));
+        if(custom.length) document.getElementById('inputCustomTag').value = custom[0];
+        
+        if(d.params) {
+            Object.keys(d.params).forEach(k => document.getElementById('p_'+k).value = d.params[k]);
+        }
+        if(d.img) {
+            currentImgBase64 = d.img;
+            document.getElementById('previewImg').src = d.img;
+            document.getElementById('previewImg').style.display = 'block';
+            document.getElementById('uploadMsg').style.display = 'none';
+        }
+        closeDetail();
+    }
+
+    function deleteCurrent() {
+        if(confirm('削除しますか？')) {
+            sakeData = sakeData.filter(d => d.id !== currentEditId);
+            saveToLS();
+            closeDetail();
+            renderList();
+        }
+    }
+
+    function backupData() {
+        const s = JSON.stringify(sakeData);
+        navigator.clipboard.writeText(s).then(()=>alert('データをコピーしました'));
+    }
+    function restoreData() {
+        const s = prompt('バックアップデータを貼り付けてください');
+        if(s) {
+            try { sakeData = JSON.parse(s); saveToLS(); alert('復元しました'); location.reload(); }
+            catch(e){ alert('データ形式エラー'); }
+        }
+    }
+</script>
+</body>
+</html>
